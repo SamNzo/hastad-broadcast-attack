@@ -7,7 +7,7 @@ Hastad's Broadcast Attack targets a scenario where the same message is encrypted
 
 The attack steps are as follows:
 
-1. The attacker collects the ciphertexts encrypted using the same modulus but different public exponents.
+1. The attacker collects the ciphertexts encrypted using different modulus but same public exponents.
 2. Using the Chinese Remainder Theorem, the attacker combines the ciphertexts to solve a system of congruences.
 3. The attacker obtains the original plaintext message by taking the N-th root of the combined solution, where N is the number of ciphertexts.
 # Install
