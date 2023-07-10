@@ -4,7 +4,29 @@ from binascii import hexlify
 from math import gcd
 import argparse
 import base64
-import libnum
+import gmpy2
+
+def chinese_remainder_theorem(congruences):
+    # Extract the moduli and residues from the congruences
+    moduli = [modulus for _, modulus in congruences]
+    residues = [residue for residue, _ in congruences]
+
+    # Compute the product of all moduli
+    N = 1
+    for modulus in moduli:
+        N *= modulus
+
+    # Compute the solution using the CRT
+    result = 0
+    for residue, modulus in congruences:
+        Ni = N // modulus
+        Mi = inverse(Ni, modulus)
+        result += residue * Ni * Mi
+
+    # Reduce the solution modulo N
+    result %= N
+
+    return result
 
 def get_public_keys():
     with open(args.publickeys[0], "rb") as f:
@@ -60,16 +82,27 @@ def get_ciphertexts():
 
     return c1, c2, c3
 
+def nth_root(x, n):
+    precision = gmpy2.get_context().precision
+    gmpy2.get_context().precision = precision + 1000  # Set precision higher for accuracy
+
+    root = gmpy2.cbrt(x) if n == 3 else gmpy2.root(x, n)
+    rounded_root = gmpy2.mpfr(root)  # Round the result to the nearest integer
+
+    gmpy2.get_context().precision = precision  # Restore original precision
+
+    return int(rounded_root)
+
 def main():
     n1, n2, n3, e = get_public_keys()
     c1, c2, c3 = get_ciphertexts()
 
     # Chinese Remainder Theorem
-    m = libnum.solve_crt([c1, c2, c3], [n1, n2, n3])
-    m = libnum.nroot(m, e)
+    m = chinese_remainder_theorem([(c1,n1), (c2,n2), (c3,n3)])
+    # 3rd root
+    m = nth_root(m, e)
 
-    print(long_to_bytes(m))
-    
+    print(long_to_bytes(m)) 
 
 if __name__ == "__main__":
     # python3 ./hastad-attack.py -k <pubkey1> <pubkey2> <pubkey3> -c <cipher1> <cipher2> <cipher3> -b64
